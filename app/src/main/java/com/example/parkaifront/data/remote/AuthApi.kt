@@ -1,6 +1,7 @@
 package com.example.parkaifront.data.remote
 
 import com.example.parkaifront.data.model.AuthResponse
+import com.example.parkaifront.data.model.LoginRequest
 import com.example.parkaifront.data.model.RegisterRequest
 import com.example.parkaifront.data.model.ResendCodeRequest
 import com.example.parkaifront.data.model.UserResponse
@@ -21,4 +22,9 @@ interface AuthApi {
 
     @POST("api/auth/resend-code")
     suspend fun resendCode(@Body request: ResendCodeRequest): Response<Unit>
+
+    @POST("api/auth/login")
+    suspend fun login(
+        @Body request: LoginRequest
+    ): Response<AuthResponse>
 }

@@ -29,6 +29,8 @@ import com.example.parkaifront.ui.screens.SuccessScreen
 import com.example.parkaifront.ui.screens.OnboardingScreen
 import com.example.parkaifront.ui.screens.Onboarding2Screen
 import com.example.parkaifront.ui.screens.Onboarding3Screen
+import com.example.parkaifront.ui.screens.HomeScreen
+import com.example.parkaifront.ui.screens.LoginScreen
 
 // Rutas de navegación
 object Routes {
@@ -39,6 +41,8 @@ object Routes {
     const val ONBOARDING = "onboarding"
     const val ONBOARDING_2 = "onboarding_2"
     const val ONBOARDING_3 = "onboarding_3"
+    const val HOME = "home"
+    const val LOGIN = "login"
     // const val LOGIN = "login" // cuando la crees
 
     fun verifyCode(email: String) = "verify_code/$email"
@@ -86,7 +90,9 @@ fun AppNavHost() {
             WelcomeScreen(
                 onGoogleSignIn = { /* TODO */ },
                 onAppleSignIn = { /* TODO */ },
-                onEmailSignIn = { /* TODO: navegar a login */ },
+                onEmailSignIn = {
+                    navController.navigate(Routes.LOGIN)
+                },
                 onRegisterClick = {
                     navController.navigate(Routes.REGISTER)
                 }
@@ -179,10 +185,33 @@ fun AppNavHost() {
         composable(Routes.ONBOARDING_3) {
             Onboarding3Screen(
                 onSkipClick = {
-                    // TODO: navegar directo al login o al home
+                    navController.navigate(Routes.HOME) {
+                        popUpTo(Routes.WELCOME) { inclusive = true }
+                    }
                 },
                 onNextClick = {
-                    // TODO: ¿es la última? navegar al login/home
+                    navController.navigate(Routes.HOME) {
+                        popUpTo(Routes.WELCOME) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(Routes.HOME) {
+            HomeScreen()
+        }
+
+        composable(Routes.LOGIN) {
+            LoginScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onLoginSuccess = {
+                    navController.navigate(Routes.HOME) {
+                        popUpTo(Routes.WELCOME) {
+                            inclusive = true
+                        }
+                    }
                 }
             )
         }
