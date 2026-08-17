@@ -32,18 +32,28 @@ import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.tileprovider.tilesource.OnlineTileSourceBase
+import org.osmdroid.tileprovider.util.SimpleInvalidationHandler
+import org.osmdroid.tileprovider.MapTileProviderBasic
+import org.osmdroid.tileprovider.tilesource.ITileSource
+import org.osmdroid.util.MapTileIndex
+import com.google.android.gms.location.CurrentLocationRequest
+import com.google.android.gms.location.Priority
 
 private const val STADIA_API_KEY = "3ea2c03f-9dfb-4b4a-9b36-ccc76e24e502"
 
-private val stadiaTileSource = XYTileSource(
+private val stadiaTileSource = object : OnlineTileSourceBase(
     "StadiaAlidade",
-    0,
-    20,
-    256,
-    ".png",
-    arrayOf("https://tiles.stadiamaps.com/tiles/alidade_smooth/"),
-    "© Stadia Maps © OpenStreetMap contributors"
-)
+    0, 20, 256, ".png",
+    arrayOf("https://tiles.stadiamaps.com/tiles/alidade_smooth/")
+) {
+    override fun getTileURLString(pMapTileIndex: Long): String {
+        val zoom = MapTileIndex.getZoom(pMapTileIndex)
+        val x = MapTileIndex.getX(pMapTileIndex)
+        val y = MapTileIndex.getY(pMapTileIndex)
+        return "${baseUrl}$zoom/$x/$y.png?api_key=$STADIA_API_KEY"
+    }
+}
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -67,7 +77,11 @@ fun HomeScreen(
         if (locationPermission.status.isGranted && mapViewRef != null) {
             val fusedClient = LocationServices.getFusedLocationProviderClient(context)
             try {
-                val location = fusedClient.lastLocation.await()
+                val currentLocationRequest = CurrentLocationRequest.Builder()
+                    .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
+                    .build()
+
+                val location = fusedClient.getCurrentLocation(currentLocationRequest, null).await()
                 location?.let {
                     mapViewRef?.controller?.animateTo(GeoPoint(it.latitude, it.longitude))
                 }
