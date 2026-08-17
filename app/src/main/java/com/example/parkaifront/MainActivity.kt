@@ -1,6 +1,8 @@
 package com.example.parkaifront
 
 import android.os.Bundle
+import androidx.compose.ui.platform.LocalContext
+
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
@@ -21,6 +23,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.parkaifront.data.local.TokenManager
 import com.example.parkaifront.ui.screens.RegisterScreen
 import com.example.parkaifront.ui.screens.VerifyCodeScreen
 import com.example.parkaifront.ui.screens.WelcomeScreen
@@ -31,6 +34,8 @@ import com.example.parkaifront.ui.screens.Onboarding2Screen
 import com.example.parkaifront.ui.screens.Onboarding3Screen
 import com.example.parkaifront.ui.screens.HomeScreen
 import com.example.parkaifront.ui.screens.LoginScreen
+import com.example.parkaifront.ui.screens.ReportScreen
+
 
 // Rutas de navegación
 object Routes {
@@ -43,7 +48,8 @@ object Routes {
     const val ONBOARDING_3 = "onboarding_3"
     const val HOME = "home"
     const val LOGIN = "login"
-    // const val LOGIN = "login" // cuando la crees
+    const val REPORT = "report"
+
 
     fun verifyCode(email: String) = "verify_code/$email"
 }
@@ -115,8 +121,11 @@ fun AppNavHost() {
             )
         }
 
+
+
         composable(Routes.VERIFY_CODE) { backStackEntry ->
             val email = backStackEntry.arguments?.getString("email") ?: ""
+            val context = LocalContext.current
 
             VerifyCodeScreen(
                 email = email,
@@ -124,26 +133,8 @@ fun AppNavHost() {
                     navController.popBackStack()
                 },
                 onVerifySuccess = { token ->
-                    // TODO: guardar el token (DataStore/SharedPreferences) y navegar al home
-                    // navController.navigate(Routes.HOME) {
-                    //     popUpTo(Routes.WELCOME) { inclusive = true }
-                    // }
-                }
-            )
-        }
-
-        composable(Routes.VERIFY_CODE) { backStackEntry ->
-            val email = backStackEntry.arguments?.getString("email") ?: ""
-
-            VerifyCodeScreen(
-                email = email,
-                onBackClick = {
-                    navController.popBackStack()
-                },
-                onVerifySuccess = { token ->
-                    // TODO: acá guardá el token (DataStore/SharedPreferences) si lo necesitás
+                    TokenManager.saveToken(context, token)
                     navController.navigate(Routes.VERIFY_SUCCESS) {
-                        // saca VERIFY_CODE del stack para que no se pueda volver con "atrás"
                         popUpTo(Routes.VERIFY_CODE) { inclusive = true }
                     }
                 }
@@ -198,21 +189,42 @@ fun AppNavHost() {
         }
 
         composable(Routes.HOME) {
-            HomeScreen()
+            HomeScreen(
+                onReportClick = {
+                    navController.navigate(Routes.REPORT)
+                }
+            )
         }
 
         composable(Routes.LOGIN) {
+            val context = LocalContext.current
+
             LoginScreen(
                 onBackClick = {
                     navController.popBackStack()
                 },
-                onLoginSuccess = {
+                onLoginSuccess = { token ->
+                    TokenManager.saveToken(context, token)
                     navController.navigate(Routes.HOME) {
                         popUpTo(Routes.WELCOME) {
                             inclusive = true
                         }
                     }
                 }
+            )
+        }
+
+        composable(Routes.REPORT) {
+            val context = LocalContext.current
+            val token = TokenManager.getToken(context) ?: ""
+
+            ReportScreen(
+                streetName = "Av. Santa Fe 3200, Palermo", // TODO: pasar la real desde el HomeScreen
+                latitude = -34.5875,
+                longitude = -58.4205,
+                authToken = token,
+                onClose = { navController.popBackStack() },
+                onReportSent = { navController.popBackStack() }
             )
         }
     }

@@ -39,6 +39,9 @@ import org.osmdroid.tileprovider.tilesource.ITileSource
 import org.osmdroid.util.MapTileIndex
 import com.google.android.gms.location.CurrentLocationRequest
 import com.google.android.gms.location.Priority
+import androidx.compose.foundation.layout.padding
+import com.example.parkaifront.ui.components.BottomNavBar
+import com.example.parkaifront.ui.components.BottomNavItem
 
 private const val STADIA_API_KEY = "3ea2c03f-9dfb-4b4a-9b36-ccc76e24e502"
 
@@ -61,8 +64,10 @@ fun HomeScreen(
     userName: String = "Luis",
     onReportClick: () -> Unit = {}
 ) {
+
     val context = LocalContext.current
     val locationPermission = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
+    var selectedNavItem by remember { mutableStateOf(BottomNavItem.MAPA) }
 
     val defaultLocation = GeoPoint(-34.5875, -58.4205)
     var mapViewRef by remember { mutableStateOf<MapView?>(null) }
@@ -91,79 +96,99 @@ fun HomeScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        AndroidView(
-            modifier = Modifier.fillMaxSize(),
-            factory = { ctx ->
-                MapView(ctx).apply {
-                    setTileSource(stadiaTileSource)
-                    setMultiTouchControls(true)
-                    controller.setZoom(15.0)
-                    controller.setCenter(defaultLocation)
-
-                    if (locationPermission.status.isGranted) {
-                        val locationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(ctx), this)
-                        locationOverlay.enableMyLocation()
-                        overlays.add(locationOverlay)
+    Scaffold(
+        bottomBar = {
+            BottomNavBar(
+                selectedItem = selectedNavItem,
+                onItemSelected = { item ->
+                    selectedNavItem = item
+                    if (item == BottomNavItem.REPORTAR) {
+                        onReportClick()
                     }
-
-                    mapViewRef = this
+                    // TODO: navegar a Favoritos, Historial, Perfil cuando existan esas pantallas
                 }
-            }
-        )
-
-        Column(
+            )
+        }
+    ) { padding ->
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .background(Color.White)
-                .padding(horizontal = 20.dp, vertical = 16.dp)
+                .fillMaxSize()
+                .padding(bottom = padding.calculateBottomPadding())
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
+            AndroidView(
+                modifier = Modifier.fillMaxSize(),
+                factory = { ctx ->
+                    MapView(ctx).apply {
+                        setTileSource(stadiaTileSource)
+                        setMultiTouchControls(true)
+                        controller.setZoom(15.0)
+                        controller.setCenter(defaultLocation)
+
+                        if (locationPermission.status.isGranted) {
+                            val locationOverlay =
+                                MyLocationNewOverlay(GpsMyLocationProvider(ctx), this)
+                            locationOverlay.enableMyLocation()
+                            overlays.add(locationOverlay)
+                        }
+
+                        mapViewRef = this
+                    }
+                }
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White)
+                    .padding(horizontal = 20.dp, vertical = 16.dp)
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Hola, $userName 👋",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = ParkaiBlueDark
-                    )
-                    Text(
-                        text = "¿Dónde querés estacionar?",
-                        fontSize = 14.sp,
-                        color = Color(0xFF6B7280)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Hola, $userName 👋",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = ParkaiBlueDark
+                        )
+                        Text(
+                            text = "¿Dónde querés estacionar?",
+                            fontSize = 14.sp,
+                            color = Color(0xFF6B7280)
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .background(Color(0xFFE5E7EB), CircleShape)
                     )
                 }
-                Box(
-                    modifier = Modifier
-                        .size(44.dp)
-                        .background(Color(0xFFE5E7EB), CircleShape)
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = "",
+                    onValueChange = { /* TODO: buscador de direcciones */ },
+                    placeholder = { Text("Buscar dirección o lugar") },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    singleLine = true,
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedTextField(
-                value = "",
-                onValueChange = { /* TODO: buscador de direcciones */ },
-                placeholder = { Text("Buscar dirección o lugar") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                singleLine = true,
-                shape = RoundedCornerShape(14.dp),
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-
-        Button(
-            onClick = onReportClick,
-            shape = RoundedCornerShape(24.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = ParkaiBlue),
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(20.dp)
-        ) {
-            Text("+ Reportar", color = Color.White, fontWeight = FontWeight.SemiBold)
+            Button(
+                onClick = onReportClick,
+                shape = RoundedCornerShape(24.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = ParkaiBlue),
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(20.dp)
+            ) {
+                Text("+ Reportar", color = Color.White, fontWeight = FontWeight.SemiBold)
+            }
         }
     }
 }
